@@ -1,109 +1,87 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:lan_transfer/server.dart';
 
-void main() => runApp(new MyApp());
-
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return new MaterialApp(
-      title: 'Flutter Demo',
-      theme: new ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
-        // counter didn't reset back to zero; the application is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+class ReadAndWriteDemo extends StatefulWidget {
+    @override
+    _ReadAndWriteDemoState createState() => new _ReadAndWriteDemoState();
+}
+class _ReadAndWriteDemoState extends State<ReadAndWriteDemo> {
+    // 全局变量，存储点击数
+    int _counter;
+    // 覆盖initState函数，创建状态对象调用该方法
+    @override
+    void initState() {
+        // 调用原initState方法内容
+        super.initState();
+        /*
+        * 调用_readCounter函数，读取点击数
+        *  将点击数作为参数，创建一个函数
+        */
+        _readCounter().then((int value){
+            // 通知框架此对象的内部状态已更改
+            setState((){
+                // 将参数赋予存储点击数的变量
+                _counter = value;
+            });
+        });
+    }
+    /*
+    * _readCounter函数，读取点击数
+    * 关键字async表示异步操作
+    * 返回值Future类型，表示延迟处理的对象
+    */
+    Future<int> _readCounter() async {
+        try {
+            /*
+            * 获取本地文件目录
+            * 关键字await表示等待操作完成
+            */
+            File file = await _getLocalFile();
+            // 使用给定的编码将整个文件内容读取为字符串
+            String  contents = await file.readAsString();
+            // 返回文件中的点击数
+            return int.parse(contents);
+        } on FileSystemException {
+            // 发生异常时返回默认值
+            return 0;
+        }
+    }
+    // _getLocalFile函数，获取本地文件目录
+    Future<File> _getLocalFile() async {
+        // 返回本地文件目录
+        return new File('$appDocPath/counter.txt');
+    }
+    // _incrementCounter函数，点击增加按钮时的回调
+    Future<Null> _incrementCounter() async {
+        setState((){
+            // 存储点击数的变量自加1
+            _counter++;
+        });
+        // 将存储点击数的变量作为字符串写入文件
+        await (await _getLocalFile()).writeAsString('$_counter');
+    }
+    @override
+    Widget build(BuildContext context) {
+        return new Scaffold(
+            appBar: new AppBar(title: new Text('读写文件操作')),
+            body: new Center(
+                child: new Text('点击按钮${_counter==0?'':'$_counter次'}！，文件路径为${appDocPath}')
+            ),
+            floatingActionButton: new FloatingActionButton(
+                onPressed: _incrementCounter,
+                tooltip: '增加',
+                child: new Icon(Icons.add),
+            )
+        );
+    }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  _MyHomePageState createState() => new _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return new Scaffold(
-      appBar: new AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: new Text(widget.title),
-      ),
-      body: new Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: new Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug paint" (press "p" in the console where you ran
-          // "flutter run", or select "Toggle Debug Paint" from the Flutter tool
-          // window in IntelliJ) to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
-            ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
+void main() {
+    startServer();
+    runApp(new MaterialApp(
+        title: 'Flutter',
+        home: new ReadAndWriteDemo(),
+    ));
 }
